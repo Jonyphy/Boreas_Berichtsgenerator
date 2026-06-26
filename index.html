@@ -131,6 +131,9 @@
   .tcard-box table{border-collapse:collapse;font-size:9px;width:auto;}
   .tcard-box td,.tcard-box th{border:1px solid #c2ccd4;padding:1px 4px;white-space:nowrap;}
   .tcard-status{padding:7px 11px;font-size:11.5px;border-top:1px solid var(--line-soft);}
+  .tcard-foot{padding:8px 11px;border-top:1px solid var(--line-soft);background:#fafdfe;}
+  .tcard-foot .hcrow{display:flex;align-items:center;gap:9px;margin:0;font-size:11.5px;font-weight:600;color:var(--ink-2);text-transform:none;letter-spacing:0;}
+  .tcard-foot .hc-input{width:60px;text-align:center;padding:6px 8px;font-size:13px;}
 
   /* block list */
   .blocks{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
@@ -378,6 +381,11 @@
             <span>Berechnung seitenfüllend<small>Ränder &amp; Kopf schrumpfen — die Tabelle bekommt maximalen Platz.</small></span>
           </label>
 
+          <label class="toggle" for="keepTogether" style="margin-top:10px;">
+            <input type="checkbox" id="keepTogether" checked>
+            <span>Tabellen zusammenhalten<small>Passt eine Tabelle nicht mehr auf die Seite, kommt sie komplett auf die nächste — nur wenn sie höher als eine ganze Seite ist, wird sie geteilt (mit wiederholtem Kopf).</small></span>
+          </label>
+
           <label for="calcImg" style="margin-top:16px;">Berechnung als Bild (optional)</label>
           <input id="calcImg" type="file" accept="image/*">
           <div id="imgList" class="blocks"></div>
@@ -610,18 +618,41 @@ function textToTableEl(text){
   t.appendChild(tb);
   return t;
 }
+function detectHeaderRows(el){
+  const rows=[...el.rows];
+  if(rows.length<=1) return 1;
+  // header height = how far the top merged structure reaches.
+  // A rowspan=R cell in the top row => R header rows. A colspan>1 cell implies a sub-header row below.
+  let h=1, hasColspan=false, maxRowspan=1;
+  [...rows[0].cells].forEach(c=>{ if((c.colSpan||1)>1) hasColspan=true; maxRowspan=Math.max(maxRowspan, c.rowSpan||1); });
+  h=Math.max(maxRowspan, hasColspan?2:1);
+  // if a deeper header row still carries a colspan>1 (nested headers), extend one more
+  if(h>=2 && rows[1] && [...rows[1].cells].some(c=>(c.colSpan||1)>1)) h=Math.max(h,2);
+  return Math.min(h, Math.max(1, rows.length-1), 4);
+}
 function blockFromTable(el){
   const trs=[...el.querySelectorAll("tr")];
   if(!trs.length) return null;
+  const cols=Math.max(...trs.map(r=>[...r.cells].reduce((a,c)=>a+(c.colSpan||1),0)));
   return {
     id: blockSeq++,
-    thead: trs[0].outerHTML,
-    rows: trs.slice(1).map(r=>r.outerHTML),
-    cols: trs[0].cells.length,
+    allRows: trs.map(r=>r.outerHTML),     // every row (header + data) kept verbatim
+    headerCount: detectHeaderRows(el),    // how many top rows are the (repeating) header
+    cols,
     total: trs.length,
     html: el.outerHTML
   };
 }
+// ensure older saved blocks (with thead/rows) get the new shape
+function normTable(t){
+  if(t.allRows) { if(!t.headerCount) t.headerCount=1; return t; }
+  const all=(t.thead?[t.thead]:[]).concat(t.rows||[]);
+  t.allRows=all; t.headerCount=t.headerCount||1; t.total=all.length;
+  if(!t.cols) t.cols=1;
+  return t;
+}
+function tableHead(t){ return normTable(t).allRows.slice(0, t.headerCount).join(""); }
+function tableBody(t){ return normTable(t).allRows.slice(t.headerCount); }
 
 /* ============ table cards (one card = one table; ＋ adds another) ============ */
 const PASTE_PH='<div class="ph">📋 Klicken &amp; <b>Strg + V</b><br>Excel-Tabelle hier einfügen</div>';
@@ -630,7 +661,8 @@ function renderCards(){
   ensureOneCard();
   const wrap=$("cards"); if(!wrap) return; wrap.innerHTML="";
   state.tables.forEach((t,i)=>{
-    const filled=!!t.rows;
+    const filled=!!t.allRows;
+    const hc=filled?(t.headerCount||1):1;
     const card=document.createElement("div"); card.className="tcard";
     card.innerHTML=`
       <div class="tcard-head">
@@ -640,12 +672,17 @@ function renderCards(){
         <button class="icon-btn x" title="entfernen" data-act="del" data-id="${t.id}">✕</button>
       </div>
       <div class="tcard-box" contenteditable="true" data-id="${t.id}">${filled?t.html:PASTE_PH}</div>
-      <div class="tcard-status status ${filled?"ok":""}">${filled?("✓ "+t.total+" Zeilen × "+t.cols+" Spalten — Farben übernommen"):"Leer — Excel hier einfügen (Strg + V)"}</div>`;
+      <div class="tcard-status status ${filled?"ok":""}">${filled?("✓ "+t.total+" Zeilen × "+t.cols+" Spalten — Farben übernommen"):"Leer — Excel hier einfügen (Strg + V)"}</div>
+      ${filled?`<div class="tcard-foot"><label class="hcrow">Kopfzeilen (werden auf jeder Seite wiederholt):
+        <input class="hc-input" type="number" min="1" max="5" value="${hc}" data-id="${t.id}"></label></div>`:""}`;
     wrap.appendChild(card);
   });
   wrap.querySelectorAll(".tcard-box").forEach(box=>{
     box.addEventListener("paste", e=>onCardPaste(e, +box.dataset.id));
     box.addEventListener("focus", function(){ if(this.querySelector(".ph")) this.innerHTML=""; });
+  });
+  wrap.querySelectorAll(".hc-input").forEach(inp=>{
+    inp.addEventListener("change", ()=>setHeaderCount(+inp.dataset.id, parseInt(inp.value)||1));
   });
   wrap.querySelectorAll("button[data-act]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -708,15 +745,20 @@ function renderImages(){
   });
 }
 function clearAllCalc(){
-  if((state.tables.some(t=>t.rows)||state.images.length) && !confirm("Alle Tabellen und Bilder entfernen?")) return;
+  if((state.tables.some(t=>t.allRows)||state.images.length) && !confirm("Alle Tabellen und Bilder entfernen?")) return;
   state.tables=[{id:blockSeq++}]; state.images=[];
   renderCards(); renderImages(); render(); saveLocal();
+}
+function setHeaderCount(id, n){
+  const t=state.tables.find(x=>x.id===id); if(!t||!t.allRows) return;
+  t.headerCount=Math.max(1, Math.min(n||1, t.allRows.length-1 || 1, 5));
+  render(); saveLocal();
 }
 
 /* ordered list of calc items for the report (tables first in card order, then images) */
 function calcItems(){
   const items=[];
-  state.tables.forEach(t=>{ if(t.rows) items.push({type:"table", thead:t.thead, rows:t.rows, cols:t.cols, total:t.total}); });
+  state.tables.forEach(t=>{ if(t.allRows){ normTable(t); items.push({type:"table", thead:tableHead(t), rows:tableBody(t), headerCount:t.headerCount, cols:t.cols, total:t.total}); } });
   state.images.forEach(im=>items.push({type:"image", src:im.src, natW:im.natW, natH:im.natH}));
   return items;
 }
@@ -959,8 +1001,9 @@ function paginateCalc(pages){
     meas.innerHTML=b.thead + b.rows.join("");
     body.appendChild(meas);
     const trs=[...meas.querySelectorAll("tr")];
-    const headH=trs[0].getBoundingClientRect().height;
-    const rowH=trs.slice(1).map(r=>r.getBoundingClientRect().height);
+    const hc=Math.max(1, Math.min(b.headerCount||1, trs.length));   // header rows (repeated each page)
+    const headH=trs.slice(0,hc).reduce((a,r)=>a+r.getBoundingClientRect().height,0);
+    const rowH=trs.slice(hc).map(r=>r.getBoundingClientRect().height);
     const natW=meas.getBoundingClientRect().width;
     let rep=trs[0]; trs.forEach(tr=>{ if(tr.cells.length>rep.cells.length) rep=tr; });
     const colW=[...rep.cells].map(c=>c.getBoundingClientRect().width);
@@ -970,23 +1013,51 @@ function paginateCalc(pages){
     const wScale = natW>bodyW ? bodyW/natW : 1;     // shrink to fit width; never enlarge
     if(wScale<1){ const eff=fontPt*wScale; calcEffPt = calcEffPt==null?eff:Math.min(calcEffPt,eff); }
 
-    spaceBeforeBlock();
-    let r=0;
-    while(r<rowH.length){
-      let remain=availH-used;
-      if(remain < (headH+(rowH[r]||headH))*wScale + 6){ openPage(); remain=availH-used; }
-      let acc=headH, take=[];                       // accumulate in UNSCALED units, then scale
-      while(r<rowH.length){ const add=rowH[r]||headH; if((acc+add)*wScale>remain) break; take.push(b.rows[r]); acc+=add; r++; }
-      if(take.length===0){ take.push(b.rows[r]); acc+=rowH[r]||headH; r++; }
+    // --- placement: keep the whole table together when it fits; split only when unavoidable ---
+    const keep = $("keepTogether") ? $("keepTogether").checked : true;
+    const MIN_ROWS = 4;                              // widow/orphan control
+    const headHs = headH*wScale;
+    const rowHs  = rowH.map(h=>(h||headH)*wScale);
+    const n = b.rows.length;
+    const H = headHs + rowHs.reduce((a,x)=>a+x,0);   // full scaled table height
+
+    function renderFragment(start, end){
       const t=document.createElement("table");
       t.className="calc-table"; t.style.fontSize=fontPt+"pt"; t.style.tableLayout="fixed"; t.style.width=natW+"px";
-      t.innerHTML=colgroup + b.thead + take.join("");
+      t.innerHTML=colgroup + b.thead + b.rows.slice(start,end).join("");
       if(wScale<1){ t.style.transform=`scale(${wScale})`; t.style.transformOrigin="top left"; }
+      const fragH = headHs + rowHs.slice(start,end).reduce((a,x)=>a+x,0);
       const wrap=document.createElement("div");
-      wrap.style.cssText=`height:${acc*wScale}px;overflow:hidden;margin-bottom:${ROW_GAP}px;`;
+      wrap.style.cssText=`height:${fragH}px;overflow:hidden;margin-bottom:${ROW_GAP}px;`;
       wrap.appendChild(t); body.appendChild(wrap);
-      used += acc*wScale + ROW_GAP;
-      if(r<rowH.length) openPage();
+      used += fragH + ROW_GAP;
+    }
+
+    spaceBeforeBlock();
+    const R = availH - used;                         // free space remaining on the current page
+
+    if(keep && H <= R + 0.5){
+      renderFragment(0, n);                          // case 1: fits in the space that's left
+    } else if(keep && H <= availH + 0.5){
+      openPage(); renderFragment(0, n);              // case 2: fits a page, just not this one -> move whole table
+    } else {
+      // case 3: genuinely taller than a page -> split, repeating the header, with a row minimum
+      if(keep && used>0){
+        const need = headHs + rowHs.slice(0, Math.min(MIN_ROWS, n)).reduce((a,x)=>a+x,0);
+        if((availH-used) < Math.min(need, availH)) openPage();   // don't start a long table on a thin sliver
+      }
+      let i=0, firstFrag=true;
+      while(i<n){
+        const cap = (firstFrag ? (availH-used) : availH);
+        let h=headHs, j=i;
+        while(j<n && h+rowHs[j] <= cap){ h+=rowHs[j]; j++; }
+        if(j===i) j=i+1;                             // force at least one row (row taller than page)
+        const rem = n - j;
+        if(rem>0 && rem<MIN_ROWS){ j -= Math.min(MIN_ROWS-rem, (j-i)-1); }  // avoid a lonely tail
+        renderFragment(i, j);
+        i=j; firstFrag=false;
+        if(i<n) openPage();
+      }
     }
   });
 }
@@ -1085,7 +1156,7 @@ function saveLocal(){
     try{
       const d={
         fields:{}, format:$("format").value, fontPt:$("fontPt").value,
-        useReportNo:$("useReportNo").checked, calcFull:$("calcFull").checked,
+        useReportNo:$("useReportNo").checked, calcFull:$("calcFull").checked, keepTogether:$("keepTogether").checked,
         docBase:$("docBase").value, docs:state.docs,
         logo:state.logo, logoCustom:state.logoCustom, taskImg:state.taskImg, layout:state.layout,
         tables:state.tables, images:state.images, blockSeq
@@ -1108,6 +1179,7 @@ function loadLocal(){
     $("useReportNo").checked=!!d.useReportNo;
     $("reportNoWrap").style.display=d.useReportNo?"block":"none";
     if(d.calcFull!==undefined) $("calcFull").checked=!!d.calcFull;
+    if(d.keepTogether!==undefined) $("keepTogether").checked=!!d.keepTogether;
     if(d.docBase!==undefined) $("docBase").value=d.docBase;
     if(Array.isArray(d.docs)) state.docs=d.docs;
     state.logoCustom = !!d.logoCustom;
