@@ -262,6 +262,10 @@
   .veil .card b{font-family:"Archivo";color:var(--ink);font-size:15px;}
   .veil .card p{margin:6px 0 0;color:var(--muted);font-size:12.5px;}
 
+  .lang-switch{margin-left:auto;display:flex;border:1px solid rgba(255,255,255,.28);border-radius:8px;overflow:hidden;align-self:flex-start;}
+  .lang-switch button{background:transparent;color:#9fc7d0;border:none;font:inherit;font-weight:700;font-size:11px;letter-spacing:.04em;padding:6px 11px;cursor:pointer;}
+  .lang-switch button.on{background:var(--gust);color:#fff;}
+
   @media (max-width:1080px){
     .shell{grid-template-columns:1fr;height:auto;overflow:visible;}
     .console{height:auto;border-right:none;border-bottom:1px solid var(--line);}
@@ -281,153 +285,157 @@
         </svg>
       </div>
       <div>
-        <h1>Berichtsgenerator</h1>
+        <h1 data-i18n="app_title">Berichtsgenerator</h1>
         <p>BOREAS</p>
+      </div>
+      <div class="lang-switch">
+        <button type="button" data-lang="de" onclick="setLang('de')">DE</button>
+        <button type="button" data-lang="en" onclick="setLang('en')">EN</button>
       </div>
     </div>
 
     <div class="steps">
       <!-- 1 PROJEKT -->
       <details class="step" open>
-        <summary><span class="num">01</span><span class="s-title">Projekt &amp; Kopfdaten</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">01</span><span class="s-title" data-i18n="s_project">Projekt &amp; Kopfdaten</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <label for="company">Firma / Abteilung</label>
+          <label for="company" data-i18n="l_company">Firma / Abteilung</label>
           <input id="company" value="BOREAS / Abt. Projektidee">
-          <label for="project">Projektname</label>
-          <input id="project" placeholder="z. B. BERT-0988 Ertragsverlustberechnung">
-          <label for="subtitle">Untertitel</label>
+          <label for="project" data-i18n="l_project">Projektname</label>
+          <input id="project" data-i18n-ph="ph_project" placeholder="z. B. BERT-0988 Ertragsverlustberechnung">
+          <label for="subtitle" data-i18n="l_subtitle">Untertitel</label>
           <input id="subtitle" value="Technischer Bericht · Ertragsverlustberechnung">
           <div class="grid2">
-            <div><label for="worked">Bearbeitet von</label><input id="worked" placeholder="Jony"></div>
-            <div><label for="checked">Geprüft von</label><input id="checked" placeholder="Dietmar"></div>
+            <div><label for="worked" data-i18n="l_worked">Bearbeitet von</label><input id="worked" placeholder="Jony"></div>
+            <div><label for="checked" data-i18n="l_checked">Geprüft von</label><input id="checked" placeholder="Dietmar"></div>
           </div>
-          <label for="rdate">Datum</label>
+          <label for="rdate" data-i18n="l_date">Datum</label>
           <input id="rdate" type="date">
-          <label for="status">Status</label>
+          <label for="status" data-i18n="l_status">Status</label>
           <div class="combo">
-            <input id="status" list="statusList" value="Optimierung" placeholder="Status wählen oder eingeben …" autocomplete="off">
-            <button class="btn btn-ghost" type="button" onclick="addStatus()" title="Aktuellen Status dauerhaft zur Liste hinzufügen">＋ Speichern</button>
+            <input id="status" list="statusList" value="Optimierung" data-i18n-ph="ph_status" placeholder="Status wählen oder eingeben …" autocomplete="off">
+            <button class="btn btn-ghost" type="button" onclick="addStatus()" data-i18n-title="tt_save_status" title="Aktuellen Status dauerhaft zur Liste hinzufügen" data-i18n="b_save_status">＋ Speichern</button>
           </div>
           <datalist id="statusList"></datalist>
           <div id="statusChips" class="status-chips"></div>
-          <p class="hint">Frei eingeben oder aus der Liste wählen. Mit <b>＋ Speichern</b> wird ein neuer Status dauerhaft gespeichert; eigene Einträge lassen sich unten mit ✕ entfernen.</p>
+          <p class="hint" data-i18n="h_status">Frei eingeben oder aus der Liste wählen. Mit <b>＋ Speichern</b> wird ein neuer Status dauerhaft gespeichert; eigene Einträge lassen sich unten mit ✕ entfernen.</p>
 
           <label class="toggle" for="useReportNo">
             <input type="checkbox" id="useReportNo">
-            <span>Berichtsnummer anzeigen<small>Standardmäßig aus — nur einschalten, wenn benötigt.</small></span>
+            <span data-i18n="t_reportno">Berichtsnummer anzeigen<small>Standardmäßig aus — nur einschalten, wenn benötigt.</small></span>
           </label>
           <div id="reportNoWrap" style="display:none;">
-            <label for="reportNo">Berichtsnummer</label>
-            <input id="reportNo" placeholder="z. B. 2026-014">
+            <label for="reportNo" data-i18n="l_reportno">Berichtsnummer</label>
+            <input id="reportNo" data-i18n-ph="ph_reportno" placeholder="z. B. 2026-014">
           </div>
         </div>
       </details>
 
       <!-- 2 LOGO -->
       <details class="step">
-        <summary><span class="num">02</span><span class="s-title">Logo</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">02</span><span class="s-title" data-i18n="s_logo">Logo</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <p class="hint" style="margin-top:0;">Das BOREAS-Standardlogo ist bereits gesetzt. Du kannst ein eigenes Logo hochladen oder das Standardlogo wiederherstellen.</p>
-          <label for="logoUpload">Eigenes Logo hochladen (optional)</label>
+          <p class="hint" style="margin-top:0;" data-i18n="h_logo">Das BOREAS-Standardlogo ist bereits gesetzt. Du kannst ein eigenes Logo hochladen oder das Standardlogo wiederherstellen.</p>
+          <label for="logoUpload" data-i18n="l_logoupload">Eigenes Logo hochladen (optional)</label>
           <input id="logoUpload" type="file" accept="image/*">
           <div class="btn-row">
-            <button class="btn btn-ghost" type="button" onclick="useDefaultLogo()">Standardlogo wiederherstellen</button>
-            <button class="btn btn-danger" type="button" onclick="removeLogo()">Logo entfernen</button>
+            <button class="btn btn-ghost" type="button" onclick="useDefaultLogo()" data-i18n="b_logo_default">Standardlogo wiederherstellen</button>
+            <button class="btn btn-danger" type="button" onclick="removeLogo()" data-i18n="b_logo_remove">Logo entfernen</button>
           </div>
         </div>
       </details>
 
       <!-- 3 AUFGABE -->
       <details class="step">
-        <summary><span class="num">03</span><span class="s-title">Aufgabe</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">03</span><span class="s-title" data-i18n="s_task">Aufgabe</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <label for="taskText">Aufgabe als Text</label>
-          <textarea id="taskText" placeholder="Beschreibung der Aufgabenstellung …"></textarea>
-          <label for="taskImg">Aufgabe als Bild (optional)</label>
+          <label for="taskText" data-i18n="l_task_text">Aufgabe als Text</label>
+          <textarea id="taskText" data-i18n-ph="ph_task" placeholder="Beschreibung der Aufgabenstellung …"></textarea>
+          <label for="taskImg" data-i18n="l_task_img">Aufgabe als Bild (optional)</label>
           <input id="taskImg" type="file" accept="image/*">
-          <button class="btn btn-danger" type="button" style="margin-top:10px;" onclick="clearImg('task')">Aufgaben-Bild entfernen</button>
+          <button class="btn btn-danger" type="button" style="margin-top:10px;" onclick="clearImg('task')" data-i18n="b_task_img_remove">Aufgaben-Bild entfernen</button>
         </div>
       </details>
 
       <!-- 4 LAGEPLAN -->
       <details class="step">
-        <summary><span class="num">04</span><span class="s-title">Lageplan</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">04</span><span class="s-title" data-i18n="s_layout">Lageplan</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <label for="layoutImg">Lageplan hochladen</label>
+          <label for="layoutImg" data-i18n="l_layout_upload">Lageplan hochladen</label>
           <input id="layoutImg" type="file" accept="image/*">
-          <button class="btn btn-danger" type="button" style="margin-top:10px;" onclick="clearImg('layout')">Lageplan entfernen</button>
-          <p class="hint">Wird nur als eigene Seite ausgegeben, wenn ein Bild vorhanden ist.</p>
+          <button class="btn btn-danger" type="button" style="margin-top:10px;" onclick="clearImg('layout')" data-i18n="b_layout_remove">Lageplan entfernen</button>
+          <p class="hint" data-i18n="h_layout">Wird nur als eigene Seite ausgegeben, wenn ein Bild vorhanden ist.</p>
         </div>
       </details>
 
       <!-- 5 BERECHNUNG -->
       <details class="step" open>
-        <summary><span class="num">05</span><span class="s-title">Berechnung</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">05</span><span class="s-title" data-i18n="s_calc">Berechnung</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <p class="hint" style="margin-top:0;">Pro Tabelle eine Karte: aus <b>Excel kopieren</b> und in eine Karte einfügen (Strg + V). <b>Farben &amp; Formatierung bleiben erhalten.</b> Für eine weitere Tabelle unten auf <b>＋ Weitere Tabelle</b>. Mehrere auf einmal kopierte Tabellen werden automatisch auf eigene Karten verteilt.</p>
+          <p class="hint" style="margin-top:0;" data-i18n="h_calc_intro">Pro Tabelle eine Karte: aus <b>Excel kopieren</b> und in eine Karte einfügen (Strg + V). <b>Farben &amp; Formatierung bleiben erhalten.</b> Für eine weitere Tabelle unten auf <b>＋ Weitere Tabelle</b>. Mehrere auf einmal kopierte Tabellen werden automatisch auf eigene Karten verteilt.</p>
 
           <div id="cards"></div>
-          <button class="btn btn-accent block" type="button" style="margin-top:8px;" onclick="addCard()">＋ Weitere Tabelle</button>
+          <button class="btn btn-accent block" type="button" style="margin-top:8px;" onclick="addCard()" data-i18n="b_add_table">＋ Weitere Tabelle</button>
 
-          <label style="margin-top:18px;">Schriftgröße der Tabellen</label>
+          <label style="margin-top:18px;" data-i18n="l_fontsize">Schriftgröße der Tabellen</label>
           <div class="stepper">
             <input id="fontPt" type="number" min="8" max="16" step="0.5" value="8">
             <span class="unit">pt</span>
           </div>
-          <p class="hint">Zielgröße für Tabellen. <b>Alle Spalten bleiben immer sichtbar</b> — ist eine Tabelle breiter als die Seite, wird sie auf Seitenbreite eingepasst (die Schrift wird dabei automatisch kleiner). Sehr breite Tabellen (viele Spalten) erreichen so ca. 6–7 pt; größer geht nur mit weniger Spalten.</p>
+          <p class="hint" data-i18n="h_fontsize">Zielgröße für Tabellen. <b>Alle Spalten bleiben immer sichtbar</b> — ist eine Tabelle breiter als die Seite, wird sie auf Seitenbreite eingepasst (die Schrift wird dabei automatisch kleiner). Sehr breite Tabellen (viele Spalten) erreichen so ca. 6–7 pt; größer geht nur mit weniger Spalten.</p>
 
           <label class="toggle" for="calcFull" style="margin-top:14px;">
             <input type="checkbox" id="calcFull" checked>
-            <span>Berechnung seitenfüllend<small>Ränder &amp; Kopf schrumpfen — die Tabelle bekommt maximalen Platz.</small></span>
+            <span data-i18n="t_calcfull">Berechnung seitenfüllend<small>Ränder &amp; Kopf schrumpfen — die Tabelle bekommt maximalen Platz.</small></span>
           </label>
 
           <label class="toggle" for="keepTogether" style="margin-top:10px;">
             <input type="checkbox" id="keepTogether" checked>
-            <span>Tabellen zusammenhalten<small>Passt eine Tabelle nicht mehr auf die Seite, kommt sie komplett auf die nächste — nur wenn sie höher als eine ganze Seite ist, wird sie geteilt (mit wiederholtem Kopf).</small></span>
+            <span data-i18n="t_keep">Tabellen zusammenhalten<small>Passt eine Tabelle nicht mehr auf die Seite, kommt sie komplett auf die nächste — nur wenn sie höher als eine ganze Seite ist, wird sie geteilt (mit wiederholtem Kopf).</small></span>
           </label>
 
-          <label for="calcImg" style="margin-top:16px;">Berechnung als Bild (optional)</label>
+          <label for="calcImg" style="margin-top:16px;" data-i18n="l_calc_img">Berechnung als Bild (optional)</label>
           <input id="calcImg" type="file" accept="image/*">
           <div id="imgList" class="blocks"></div>
 
-          <button class="btn btn-danger block" type="button" style="margin-top:14px;" onclick="clearAllCalc()">Alle Tabellen &amp; Bilder entfernen</button>
+          <button class="btn btn-danger block" type="button" style="margin-top:14px;" onclick="clearAllCalc()" data-i18n="b_clear_calc">Alle Tabellen &amp; Bilder entfernen</button>
         </div>
       </details>
 
       <!-- 6 VERWENDETE UNTERLAGEN -->
       <details class="step">
-        <summary><span class="num">06</span><span class="s-title">Verwendete Unterlagen</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">06</span><span class="s-title" data-i18n="s_docs">Verwendete Unterlagen</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <p class="hint" style="margin-top:0;">Liste verwendeter Unterlagen mit anklickbarem Link. Im PDF öffnet ein Klick das angegebene Ziel (Ordner/Datei).</p>
-          <label for="docBase">Basis-Ordner (optional)</label>
-          <input id="docBase" placeholder="z. B. S:\Projekte\BERT-0988">
-          <p class="hint">Wird jedem Ziel ohne eigenen Pfad vorangestellt. Lokale Ordner: als <code>file:///…</code> oder Laufwerkspfad. Hinweis: Ob ein lokaler Ordner-Link sich öffnet, hängt vom PDF-Betrachter/Browser ab (Sicherheitseinstellungen).</p>
-          <label style="margin-top:14px;">Einträge</label>
+          <p class="hint" style="margin-top:0;" data-i18n="h_docs_intro">Liste verwendeter Unterlagen mit anklickbarem Link. Im PDF öffnet ein Klick das angegebene Ziel (Ordner/Datei).</p>
+          <label for="docBase" data-i18n="l_docbase">Basis-Ordner (optional)</label>
+          <input id="docBase" data-i18n-ph="ph_docbase" placeholder="z. B. S:\Projekte\BERT-0988">
+          <p class="hint" data-i18n="h_docs_path">Wird jedem Ziel ohne eigenen Pfad vorangestellt. Lokale Ordner: als <code>file:///…</code> oder Laufwerkspfad. Hinweis: Ob ein lokaler Ordner-Link sich öffnet, hängt vom PDF-Betrachter/Browser ab (Sicherheitseinstellungen).</p>
+          <label style="margin-top:14px;" data-i18n="l_docs_entries">Einträge</label>
           <div id="docRows"></div>
-          <button class="btn btn-ghost block" type="button" style="margin-top:10px;" onclick="addDocRow()">＋ Zeile hinzufügen</button>
+          <button class="btn btn-ghost block" type="button" style="margin-top:10px;" onclick="addDocRow()" data-i18n="b_add_row">＋ Zeile hinzufügen</button>
         </div>
       </details>
 
       <!-- 7 BEMERKUNGEN -->
       <details class="step">
-        <summary><span class="num">07</span><span class="s-title">Bemerkungen</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">07</span><span class="s-title" data-i18n="s_remarks">Bemerkungen</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <label for="notes">Bemerkungen</label>
-          <textarea id="notes" placeholder="Zusätzliche Anmerkungen …"></textarea>
-          <p class="hint">Wird nur als eigene Seite ausgegeben, wenn Text vorhanden ist.</p>
+          <label for="notes" data-i18n="l_remarks">Bemerkungen</label>
+          <textarea id="notes" data-i18n-ph="ph_remarks" placeholder="Zusätzliche Anmerkungen …"></textarea>
+          <p class="hint" data-i18n="h_remarks">Wird nur als eigene Seite ausgegeben, wenn Text vorhanden ist.</p>
         </div>
       </details>
 
       <!-- 8 EXPORT -->
       <details class="step" open>
-        <summary><span class="num">08</span><span class="s-title">Export</span><span class="chev">&#9660;</span></summary>
+        <summary><span class="num">08</span><span class="s-title" data-i18n="s_export">Export</span><span class="chev">&#9660;</span></summary>
         <div class="body">
-          <button id="pdfBtn" class="btn btn-accent block" type="button" onclick="exportPdf()">PDF exportieren</button>
+          <button id="pdfBtn" class="btn btn-accent block" type="button" onclick="exportPdf()" data-i18n="b_export_pdf">PDF exportieren</button>
           <div class="btn-row">
-            <button class="btn btn-ghost" type="button" onclick="render()">Vorschau aktualisieren</button>
-            <button class="btn btn-danger" type="button" onclick="resetAll()">Zurücksetzen</button>
+            <button class="btn btn-ghost" type="button" onclick="render()" data-i18n="b_refresh">Vorschau aktualisieren</button>
+            <button class="btn btn-danger" type="button" onclick="resetAll()" data-i18n="b_reset">Zurücksetzen</button>
           </div>
-          <div id="saveStatus" class="status">Automatisch gespeichert.</div>
+          <div id="saveStatus" class="status" data-i18n="st_autosave">Automatisch gespeichert.</div>
         </div>
       </details>
     </div>
@@ -436,16 +444,16 @@
   <!-- ============ STAGE ============ -->
   <main class="stage">
     <div class="toolbar">
-      <span class="tb-title">Vorschau</span>
+      <span class="tb-title" data-i18n="tb_preview">Vorschau</span>
       <span class="chip" id="pgChip"><b>0</b> Seiten</span>
       <span class="chip" id="warnChip" style="display:none;background:#5a3d10;border-color:#7a5a1e;color:#ffd591;cursor:help;">⚠ Tabelle zu breit</span>
       <span class="spacer"></span>
-      <span class="tb-title" style="color:#6d8694;">Seitenformat</span>
+      <span class="tb-title" style="color:#6d8694;" data-i18n="tb_format">Seitenformat</span>
       <select id="format" class="fmt-select">
-        <option value="a3l" selected>A3 Querformat</option>
-        <option value="a3p">A3 Hochformat</option>
-        <option value="a4l">A4 Querformat</option>
-        <option value="a4p">A4 Hochformat</option>
+        <option value="a3l" selected data-i18n="opt_a3l">A3 Querformat</option>
+        <option value="a3p" data-i18n="opt_a3p">A3 Hochformat</option>
+        <option value="a4l" data-i18n="opt_a4l">A4 Querformat</option>
+        <option value="a4p" data-i18n="opt_a4p">A4 Hochformat</option>
       </select>
     </div>
     <div class="pages" id="pages"></div>
@@ -453,7 +461,7 @@
 </div>
 
 <div class="veil" id="veil">
-  <div class="card"><div class="spin"></div><b>PDF wird erstellt …</b><p id="veilMsg">Seiten werden gerendert</p></div>
+  <div class="card"><div class="spin"></div><b data-i18n="v_creating">PDF wird erstellt …</b><p id="veilMsg" data-i18n="v_rendering">Seiten werden gerendert</p></div>
 </div>
 
 <script>
@@ -463,6 +471,80 @@ const PX = 96/72;                 // pt -> px at 96dpi
 const STORE = "boreas_report_v1";
 const STATUS_STORE = "boreas_statuses_v1";   // persisted custom status entries (global, survives reset)
 const DEFAULT_STATUSES = ["Optimierung","Projektänderungsantrag","Vergleichsberechnung","Nach Erhalt des Gutachtens","Nach Erhalt der Genehmigung","Ertrag für Ausschreibungen","Ertrag für Finanzierung","Allgemeine Berechnung","Wirtschaftlichkeitsprüfung"];
+
+/* ============ i18n — UI language only (the REPORT always stays German) ============ */
+let LANG = localStorage.getItem("boreas_lang") || "de";
+const I18N_BASE={}, I18N_BASE_PH={}, I18N_BASE_TT={};   // captured German baseline (source of truth for DE)
+const EN = {
+  app_title:"Report Generator",
+  s_project:"Project &amp; header", s_logo:"Logo", s_task:"Task", s_layout:"Site plan",
+  s_calc:"Calculation", s_docs:"Source documents", s_remarks:"Remarks", s_export:"Export",
+  l_company:"Company / department", l_project:"Project name", l_subtitle:"Subtitle",
+  l_worked:"Prepared by", l_checked:"Checked by", l_date:"Date", l_status:"Status",
+  b_save_status:"＋ Save",
+  h_status:'Type freely or pick from the list. With <b>＋ Save</b> a new status is stored permanently; remove your own entries below with ✕.',
+  t_reportno:"Show report number<small>Off by default — switch on only if needed.</small>",
+  l_reportno:"Report number",
+  h_logo:"The BOREAS default logo is already set. You can upload your own logo or restore the default.",
+  l_logoupload:"Upload your own logo (optional)", b_logo_default:"Restore default logo", b_logo_remove:"Remove logo",
+  l_task_text:"Task as text", l_task_img:"Task as image (optional)", b_task_img_remove:"Remove task image",
+  l_layout_upload:"Upload site plan", b_layout_remove:"Remove site plan",
+  h_layout:"Only added as its own page if an image is present.",
+  h_calc_intro:'One card per table: <b>copy from Excel</b> and paste into a card (Ctrl + V). <b>Colours &amp; formatting are kept.</b> For another table, use <b>＋ Add table</b> below. Several tables copied at once are split onto their own cards automatically.',
+  b_add_table:"＋ Add table", l_fontsize:"Table font size",
+  h_fontsize:'Target size for tables. <b>All columns always stay visible</b> — if a table is wider than the page it is fitted to the page width (the font then shrinks automatically). Very wide tables (many columns) reach about 6–7 pt this way; larger is only possible with fewer columns.',
+  t_calcfull:"Calculation full-page<small>Margins &amp; header shrink — the table gets maximum space.</small>",
+  t_keep:"Keep tables together<small>If a table no longer fits the page, it moves entirely to the next one — only if it is taller than a whole page is it split (with the header repeated).</small>",
+  l_calc_img:"Calculation as image (optional)", b_clear_calc:"Remove all tables &amp; images",
+  h_docs_intro:"List of source documents with a clickable link. In the PDF a click opens the given target (folder/file).",
+  l_docbase:"Base folder (optional)",
+  h_docs_path:'Prepended to every target without its own path. Local folders: as <code>file:///…</code> or a drive path. Note: whether a local folder link opens depends on the PDF viewer/browser (security settings).',
+  l_docs_entries:"Entries", b_add_row:"＋ Add row",
+  l_remarks:"Remarks", h_remarks:"Only added as its own page if text is present.",
+  b_export_pdf:"Export PDF", b_refresh:"Refresh preview", b_reset:"Reset", st_autosave:"Saved automatically.",
+  tb_preview:"Preview", tb_format:"Page format",
+  opt_a3l:"A3 landscape", opt_a3p:"A3 portrait", opt_a4l:"A4 landscape", opt_a4p:"A4 portrait",
+  v_creating:"Creating PDF …", v_rendering:"Rendering pages"
+};
+const EN_PH = {
+  ph_status:"Choose or type a status …", ph_reportno:"e.g. 2026-014",
+  ph_project:"e.g. BERT-0988 yield-loss calculation", ph_task:"Description of the task …",
+  ph_docbase:"e.g. S:\\Projekte\\BERT-0988", ph_remarks:"Additional remarks …"
+};
+const EN_TT = { tt_save_status:"Add the current status to the list permanently" };
+const DYN = {
+  card_filled:{de:"✓ {total} Zeilen × {cols} Spalten — Farben übernommen", en:"✓ {total} rows × {cols} columns — colours kept"},
+  card_empty:{de:"Leer — Excel hier einfügen (Strg + V)", en:"Empty — paste Excel here (Ctrl + V)"},
+  table_n:{de:"Tabelle {n}", en:"Table {n}"},
+  header_rows:{de:"Kopfzeilen (werden auf jeder Seite wiederholt):", en:"Header rows (repeated on every page):"},
+  no_table:{de:"Keine Tabelle erkannt — Zellen in Excel markieren & kopieren.", en:"No table detected — select the cells in Excel and copy."},
+  image_n:{de:"Bild {n}", en:"Image {n}"},
+  confirm_clear_calc:{de:"Alle Tabellen und Bilder entfernen?", en:"Remove all tables and images?"},
+  confirm_reset:{de:"Alle Eingaben zurücksetzen?", en:"Reset all entries?"},
+  page:{de:"Seite", en:"page"}, pages:{de:"Seiten", en:"pages"},
+  chip_tables:{de:"Tabellen ≈ {pt} pt · alle Spalten", en:"Tables ≈ {pt} pt · all columns"},
+  chip_tables_title:{de:"Die Tabelle wird auf Seitenbreite eingepasst, damit alle Spalten sichtbar bleiben. Größer ist nur mit Spaltenaufteilung oder weniger Spalten möglich.", en:"The table is fitted to the page width so all columns stay visible. Larger is only possible by splitting columns or showing fewer columns."},
+  v_page:{de:"Seite {i} von {n}", en:"Page {i} of {n}"},
+  saved:{de:"Gespeichert:", en:"Saved:"},
+  save_failed:{de:"Speichern fehlgeschlagen (evtl. zu große Bilder).", en:"Save failed (images may be too large)."},
+  custom_label:{de:"Eigene:", en:"Custom:"},
+  ph_doc_label:{de:"Bezeichnung", en:"Label"}, ph_doc_target:{de:"Ziel/Ordner", en:"Target/folder"}
+};
+function tt(key,vars){ const e=DYN[key]; let s=e?(LANG==="en"?e.en:e.de):key; if(vars) for(const k in vars) s=s.split("{"+k+"}").join(vars[k]); return s; }
+function captureBase(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{const k=el.getAttribute("data-i18n"); if(!(k in I18N_BASE)) I18N_BASE[k]=el.innerHTML;});
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{const k=el.getAttribute("data-i18n-ph"); if(!(k in I18N_BASE_PH)) I18N_BASE_PH[k]=el.getAttribute("placeholder")||"";});
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{const k=el.getAttribute("data-i18n-title"); if(!(k in I18N_BASE_TT)) I18N_BASE_TT[k]=el.getAttribute("title")||"";});
+}
+function applyLang(){
+  document.querySelectorAll("[data-i18n]").forEach(el=>{const k=el.getAttribute("data-i18n"); el.innerHTML = LANG==="en"?(EN[k]!=null?EN[k]:I18N_BASE[k]):I18N_BASE[k];});
+  document.querySelectorAll("[data-i18n-ph]").forEach(el=>{const k=el.getAttribute("data-i18n-ph"); el.setAttribute("placeholder", LANG==="en"?(EN_PH[k]!=null?EN_PH[k]:I18N_BASE_PH[k]):I18N_BASE_PH[k]);});
+  document.querySelectorAll("[data-i18n-title]").forEach(el=>{const k=el.getAttribute("data-i18n-title"); el.setAttribute("title", LANG==="en"?(EN_TT[k]!=null?EN_TT[k]:I18N_BASE_TT[k]):I18N_BASE_TT[k]);});
+  document.querySelectorAll(".lang-switch button").forEach(b=>b.classList.toggle("on", b.dataset.lang===LANG));
+  document.documentElement.lang = LANG;
+  renderCards(); renderImages(); renderDocRows(); renderStatusList(); render();
+}
+function setLang(l){ LANG=l; try{localStorage.setItem("boreas_lang",l);}catch(e){} applyLang(); }
 
 /* ---- page formats (points = jsPDF unit) ---- */
 const FORMATS = {
@@ -528,7 +610,7 @@ function renderStatusList(){
   const chips=$("statusChips"); if(!chips) return;
   const custom=loadCustomStatuses();
   chips.innerHTML = custom.length
-    ? `<span class="hint" style="margin:0 4px 0 0;align-self:center;">Eigene:</span>` + custom.map(s=>`<span class="schip">${esc(s)}<button type="button" title="Entfernen" onclick="removeStatus('${esc(s).replace(/'/g,"\\'")}')">✕</button></span>`).join("")
+    ? `<span class="hint" style="margin:0 4px 0 0;align-self:center;">${tt("custom_label")}</span>` + custom.map(s=>`<span class="schip">${esc(s)}<button type="button" title="Entfernen" onclick="removeStatus('${esc(s).replace(/'/g,"\\'")}')">✕</button></span>`).join("")
     : "";
 }
 function addStatus(){
@@ -666,14 +748,14 @@ function renderCards(){
     const card=document.createElement("div"); card.className="tcard";
     card.innerHTML=`
       <div class="tcard-head">
-        <b>Tabelle ${i+1}</b>
+        <b>${tt("table_n",{n:i+1})}</b>
         <button class="icon-btn" title="nach oben" ${i===0?"disabled":""} data-act="up" data-id="${t.id}">▲</button>
         <button class="icon-btn" title="nach unten" ${i===state.tables.length-1?"disabled":""} data-act="down" data-id="${t.id}">▼</button>
         <button class="icon-btn x" title="entfernen" data-act="del" data-id="${t.id}">✕</button>
       </div>
       <div class="tcard-box" contenteditable="true" data-id="${t.id}">${filled?t.html:PASTE_PH}</div>
-      <div class="tcard-status status ${filled?"ok":""}">${filled?("✓ "+t.total+" Zeilen × "+t.cols+" Spalten — Farben übernommen"):"Leer — Excel hier einfügen (Strg + V)"}</div>
-      ${filled?`<div class="tcard-foot"><label class="hcrow">Kopfzeilen (werden auf jeder Seite wiederholt):
+      <div class="tcard-status status ${filled?"ok":""}">${filled?tt("card_filled",{total:t.total,cols:t.cols}):tt("card_empty")}</div>
+      ${filled?`<div class="tcard-foot"><label class="hcrow">${tt("header_rows")}
         <input class="hc-input" type="number" min="1" max="5" value="${hc}" data-id="${t.id}"></label></div>`:""}`;
     wrap.appendChild(card);
   });
@@ -719,7 +801,7 @@ function onCardPaste(e, id){
   } else if(text.includes("\t")){
     const el=textToTableEl(text); if(el) captured.push(el);
   }
-  if(!captured.length){ setCardStatus(id,"Keine Tabelle erkannt — Zellen in Excel markieren & kopieren.","warn"); return; }
+  if(!captured.length){ setCardStatus(id,tt("no_table"),"warn"); return; }
   const blocks=captured.map(blockFromTable).filter(Boolean);
   const idx=state.tables.findIndex(t=>t.id===id); if(idx<0) return;
   blocks[0].id=id;
@@ -739,13 +821,13 @@ function renderImages(){
   const wrap=$("imgList"); if(!wrap) return; wrap.innerHTML="";
   state.images.forEach((im,i)=>{
     const row=document.createElement("div"); row.className="blk";
-    row.innerHTML=`<div class="ic">▣</div><div class="meta"><b>Bild ${i+1}</b><small>${im.natW}×${im.natH}px</small></div>
+    row.innerHTML=`<div class="ic">▣</div><div class="meta"><b>${tt("image_n",{n:i+1})}</b><small>${im.natW}×${im.natH}px</small></div>
       <div class="ctrls"><button class="icon-btn x" title="Entfernen" onclick="removeImage(${im.id})">✕</button></div>`;
     wrap.appendChild(row);
   });
 }
 function clearAllCalc(){
-  if((state.tables.some(t=>t.allRows)||state.images.length) && !confirm("Alle Tabellen und Bilder entfernen?")) return;
+  if((state.tables.some(t=>t.allRows)||state.images.length) && !confirm(tt("confirm_clear_calc"))) return;
   state.tables=[{id:blockSeq++}]; state.images=[];
   renderCards(); renderImages(); render(); saveLocal();
 }
@@ -782,8 +864,8 @@ function renderDocRows(){
   state.docs.forEach((d,i)=>{
     const row=document.createElement("div"); row.className="doc-row";
     row.innerHTML=`
-      <input data-i="${i}" data-k="label" placeholder="Bezeichnung" value="${esc(d.label)}">
-      <input data-i="${i}" data-k="target" placeholder="Ziel/Ordner" value="${esc(d.target)}">
+      <input data-i="${i}" data-k="label" placeholder="${tt('ph_doc_label')}" value="${esc(d.label)}">
+      <input data-i="${i}" data-k="target" placeholder="${tt('ph_doc_target')}" value="${esc(d.target)}">
       <button class="icon-btn x" title="Entfernen" onclick="removeDocRow(${i})">✕</button>`;
     wrap.appendChild(row);
   });
@@ -1066,12 +1148,12 @@ function paginateCalc(pages){
 function numberAndScale(){
   const frames=[...$("pages").querySelectorAll(".page-frame")];
   const n=frames.length;
-  $("pgChip").innerHTML=`<b>${n}</b> Seite${n===1?"":"n"}`;
+  $("pgChip").innerHTML=`<b>${n}</b> ${tt(n===1?"page":"pages")}`;
   const wc=$("warnChip");
   if(calcEffPt!=null && calcEffPt < 7.95){
-    wc.style.display=""; wc.textContent=`Tabellen ≈ ${calcEffPt.toFixed(1)} pt · alle Spalten`;
+    wc.style.display=""; wc.textContent=tt("chip_tables",{pt:calcEffPt.toFixed(1)});
     wc.style.background="#1e3a2b"; wc.style.borderColor="#2f5a44"; wc.style.color="#bfe6cf";
-    wc.title="Die Tabelle wird auf Seitenbreite eingepasst, damit alle Spalten sichtbar bleiben. Größer ist nur mit Spaltenaufteilung oder weniger Spalten möglich.";
+    wc.title=tt("chip_tables_title");
   } else { wc.style.display="none"; wc.title=""; }
 
   // available width in the stage
@@ -1109,7 +1191,7 @@ async function exportPdf(){
 
     const frames=[...$("pages").querySelectorAll(".page-frame")];
     for(let i=0;i<frames.length;i++){
-      $("veilMsg").textContent=`Seite ${i+1} von ${frames.length}`;
+      $("veilMsg").textContent=tt("v_page",{i:i+1,n:frames.length});
       const page=frames[i].querySelector(".page");
       // temporarily render at full scale for crisp capture
       const prev=page.style.getPropertyValue("--scale");
@@ -1164,9 +1246,9 @@ function saveLocal(){
       ["company","project","subtitle","worked","checked","rdate","status","reportNo","taskText","notes"]
         .forEach(k=>d.fields[k]=$(k).value);
       localStorage.setItem(STORE, JSON.stringify(d));
-      $("saveStatus").textContent="Gespeichert: "+new Date().toLocaleTimeString();
+      $("saveStatus").textContent=tt("saved")+" "+new Date().toLocaleTimeString();
       $("saveStatus").className="status ok";
-    }catch(e){ $("saveStatus").textContent="Speichern fehlgeschlagen (evtl. zu große Bilder)."; $("saveStatus").className="status warn"; }
+    }catch(e){ $("saveStatus").textContent=tt("save_failed"); $("saveStatus").className="status warn"; }
   },400);
 }
 function loadLocal(){
@@ -1193,7 +1275,7 @@ function loadLocal(){
   }catch(e){ console.warn(e); return false; }
 }
 function resetAll(){
-  if(!confirm("Alle Eingaben zurücksetzen?")) return;
+  if(!confirm(tt("confirm_reset"))) return;
   localStorage.removeItem(STORE);
   location.reload();
 }
@@ -1215,11 +1297,8 @@ document.querySelector(".console").addEventListener("input", e=>{
   }else if(!$("rdate").value){
     $("rdate").value=new Date().toISOString().slice(0,10);
   }
-  renderDocRows();
-  renderStatusList();
-  renderCards();
-  renderImages();
-  render();
+  captureBase();
+  applyLang();
 })();
 if(document.fonts && document.fonts.ready){ document.fonts.ready.then(()=>render()); }
 </script>
