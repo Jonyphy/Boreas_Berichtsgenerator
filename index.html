@@ -220,6 +220,16 @@
   .center-media{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}
   .center-media img{max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--line);border-radius:10px;}
 
+  /* table name / heading printed above a calc table */
+  .calc-title{font-family:"Archivo","Inter",sans-serif;font-size:13.5px;line-height:1.3;margin:0 0 5px;}
+
+  /* multiple site plans on one page */
+  .lp-grid{flex:1;min-height:0;display:grid;gap:14px;margin-top:4px;}
+  .lp-grid.one,.lp-grid.two{grid-template-columns:1fr;}
+  .lp-grid.many{grid-template-columns:1fr 1fr;grid-auto-rows:1fr;}
+  .lp-grid .lp-cell{min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .lp-grid .lp-cell img{max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--line);border-radius:8px;}
+
   /* calc body region (the part we paginate into) */
   .calc-body{flex:1;min-height:0;margin-top:18px;}
   .calc-table{border-collapse:collapse;width:auto;}
@@ -362,9 +372,17 @@
         <summary><span class="num">04</span><span class="s-title" data-i18n="s_layout">Lageplan</span><span class="chev">&#9660;</span></summary>
         <div class="body">
           <label for="layoutImg" data-i18n="l_layout_upload">Lageplan hochladen</label>
-          <input id="layoutImg" type="file" accept="image/*">
-          <button class="btn btn-danger" type="button" style="margin-top:10px;" onclick="clearImg('layout')" data-i18n="b_layout_remove">Lageplan entfernen</button>
-          <p class="hint" data-i18n="h_layout">Wird nur als eigene Seite ausgegeben, wenn ein Bild vorhanden ist.</p>
+          <input id="layoutImg" type="file" accept="image/*" multiple>
+          <p class="hint" data-i18n="h_layout_multi">Mehrere Lagepläne möglich — mehrere Dateien auf einmal oder nacheinander auswählen.</p>
+          <div id="layoutList" class="blocks"></div>
+
+          <label style="margin-top:16px;" data-i18n="l_layout_mode">Anordnung</label>
+          <select id="layoutMode">
+            <option value="each" data-i18n="opt_layout_each">Jeder Lageplan auf eigener Seite</option>
+            <option value="combined" data-i18n="opt_layout_combined">Alle Lagepläne auf einer Seite</option>
+          </select>
+
+          <button class="btn btn-danger block" type="button" style="margin-top:12px;" onclick="clearImg('layout')" data-i18n="b_layout_remove">Alle Lagepläne entfernen</button>
         </div>
       </details>
 
@@ -488,8 +506,9 @@ const EN = {
   h_logo:"The BOREAS default logo is already set. You can upload your own logo or restore the default.",
   l_logoupload:"Upload your own logo (optional)", b_logo_default:"Restore default logo", b_logo_remove:"Remove logo",
   l_task_text:"Task as text", l_task_img:"Task as image (optional)", b_task_img_remove:"Remove task image",
-  l_layout_upload:"Upload site plan", b_layout_remove:"Remove site plan",
-  h_layout:"Only added as its own page if an image is present.",
+  l_layout_upload:"Upload site plan", b_layout_remove:"Remove all site plans",
+  h_layout_multi:"Several site plans possible — pick multiple files at once or upload one after another.",
+  l_layout_mode:"Arrangement", opt_layout_each:"Each site plan on its own page", opt_layout_combined:"All site plans on one page",
   h_calc_intro:'One card per table: <b>copy from Excel</b> and paste into a card (Ctrl + V). <b>Colours &amp; formatting are kept.</b> For another table, use <b>＋ Add table</b> below. Several tables copied at once are split onto their own cards automatically.',
   b_add_table:"＋ Add table", l_fontsize:"Table font size",
   h_fontsize:'Target size for tables. <b>All columns always stay visible</b> — if a table is wider than the page it is fitted to the page width (the font then shrinks automatically). Very wide tables (many columns) reach about 6–7 pt this way; larger is only possible with fewer columns.',
@@ -516,6 +535,12 @@ const DYN = {
   card_filled:{de:"✓ {total} Zeilen × {cols} Spalten — Farben übernommen", en:"✓ {total} rows × {cols} columns — colours kept"},
   card_empty:{de:"Leer — Excel hier einfügen (Strg + V)", en:"Empty — paste Excel here (Ctrl + V)"},
   table_n:{de:"Tabelle {n}", en:"Table {n}"},
+  layout_n:{de:"Lageplan {n}", en:"Site plan {n}"},
+  tbl_name:{de:"Tabellenname:", en:"Table name:"},
+  tbl_name_ph:{de:"z. B. Ertragsverluste", en:"e.g. Yield losses"},
+  tbl_color:{de:"Farbe", en:"Colour"},
+  tbl_bold:{de:"Fett", en:"Bold"},
+  space_after:{de:"Abstand danach:", en:"Space after:"},
   header_rows:{de:"Kopfzeilen (werden auf jeder Seite wiederholt):", en:"Header rows (repeated on every page):"},
   no_table:{de:"Keine Tabelle erkannt — Zellen in Excel markieren & kopieren.", en:"No table detected — select the cells in Excel and copy."},
   image_n:{de:"Bild {n}", en:"Image {n}"},
@@ -542,7 +567,7 @@ function applyLang(){
   document.querySelectorAll("[data-i18n-title]").forEach(el=>{const k=el.getAttribute("data-i18n-title"); el.setAttribute("title", LANG==="en"?(EN_TT[k]!=null?EN_TT[k]:I18N_BASE_TT[k]):I18N_BASE_TT[k]);});
   document.querySelectorAll(".lang-switch button").forEach(b=>b.classList.toggle("on", b.dataset.lang===LANG));
   document.documentElement.lang = LANG;
-  renderCards(); renderImages(); renderDocRows(); renderStatusList(); render();
+  renderCards(); renderImages(); renderLayouts(); renderDocRows(); renderStatusList(); render();
 }
 function setLang(l){ LANG=l; try{localStorage.setItem("boreas_lang",l);}catch(e){} applyLang(); }
 
@@ -560,8 +585,10 @@ const state = {
   logo: "",          // data url or "" ; default set on load
   logoCustom: false, // true only when the user uploaded their own logo
   taskImg: "",
-  layout: "",
-  tables: [],        // one card per entry: { id, thead, rows:[], cols, total, html }  (empty card: thead/rows null)
+  layout: "",        // legacy single plan (kept for old saves; migrated into layouts on load)
+  layouts: [],       // multiple site plans: { id, src, natW, natH }
+  layoutMode: "each",// "each" = one page per plan, "combined" = all plans on one page
+  tables: [],        // one card per entry: { id, thead, rows:[], cols, total, html, title, titleColor, titleBold, spaceAfter }  (empty card: thead/rows null)
   images: [],        // { id, src, natW, natH }
   docs: [            // Verwendete Unterlagen { label, target }
     {label:"Wake_2e_Berichte_mjon", target:"Wake2e"},
@@ -755,16 +782,40 @@ function renderCards(){
       </div>
       <div class="tcard-box" contenteditable="true" data-id="${t.id}">${filled?t.html:PASTE_PH}</div>
       <div class="tcard-status status ${filled?"ok":""}">${filled?tt("card_filled",{total:t.total,cols:t.cols}):tt("card_empty")}</div>
-      ${filled?`<div class="tcard-foot"><label class="hcrow">${tt("header_rows")}
-        <input class="hc-input" type="number" min="1" max="5" value="${hc}" data-id="${t.id}"></label></div>`:""}`;
+      ${filled?`<div class="tcard-foot">
+        <label class="hcrow" style="margin-bottom:8px;">${tt("tbl_name")}
+          <input class="tt-name" type="text" placeholder="${tt('tbl_name_ph')}" value="${esc(t.title||'')}" data-id="${t.id}" style="flex:1;padding:6px 8px;font-size:13px;"></label>
+        <div class="hcrow" style="margin-bottom:8px;gap:16px;">
+          <label class="hcrow" style="margin:0;gap:6px;">${tt("tbl_color")}
+            <input class="tt-color" type="color" value="${t.titleColor||'#0B2540'}" data-id="${t.id}" style="width:40px;height:28px;padding:2px;cursor:pointer;"></label>
+          <label class="hcrow" style="margin:0;gap:6px;cursor:pointer;">
+            <input class="tt-bold" type="checkbox" ${t.titleBold?'checked':''} data-id="${t.id}" style="width:16px;height:16px;accent-color:var(--gust-deep);">${tt("tbl_bold")}</label>
+        </div>
+        <label class="hcrow" style="margin-bottom:8px;">${tt("header_rows")}
+          <input class="hc-input" type="number" min="1" max="5" value="${hc}" data-id="${t.id}"></label>
+        <label class="hcrow" style="margin:0;">${tt("space_after")}
+          <input class="sp-input hc-input" type="number" min="0" max="10" step="1" value="${t.spaceAfter||0}" data-id="${t.id}"></label>
+      </div>`:""}`;
     wrap.appendChild(card);
   });
   wrap.querySelectorAll(".tcard-box").forEach(box=>{
     box.addEventListener("paste", e=>onCardPaste(e, +box.dataset.id));
     box.addEventListener("focus", function(){ if(this.querySelector(".ph")) this.innerHTML=""; });
   });
-  wrap.querySelectorAll(".hc-input").forEach(inp=>{
+  wrap.querySelectorAll(".hc-input:not(.sp-input)").forEach(inp=>{
     inp.addEventListener("change", ()=>setHeaderCount(+inp.dataset.id, parseInt(inp.value)||1));
+  });
+  wrap.querySelectorAll(".tt-name").forEach(inp=>{
+    inp.addEventListener("input", ()=>{ const t=state.tables.find(x=>x.id===+inp.dataset.id); if(t){ t.title=inp.value; render(); saveLocal(); } });
+  });
+  wrap.querySelectorAll(".tt-color").forEach(inp=>{
+    inp.addEventListener("input", ()=>{ const t=state.tables.find(x=>x.id===+inp.dataset.id); if(t){ t.titleColor=inp.value; render(); saveLocal(); } });
+  });
+  wrap.querySelectorAll(".tt-bold").forEach(inp=>{
+    inp.addEventListener("change", ()=>{ const t=state.tables.find(x=>x.id===+inp.dataset.id); if(t){ t.titleBold=inp.checked; render(); saveLocal(); } });
+  });
+  wrap.querySelectorAll(".sp-input").forEach(inp=>{
+    inp.addEventListener("input", ()=>{ const t=state.tables.find(x=>x.id===+inp.dataset.id); if(t){ t.spaceAfter=Math.max(0,Math.min(10,parseInt(inp.value)||0)); render(); saveLocal(); } });
   });
   wrap.querySelectorAll("button[data-act]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -840,7 +891,7 @@ function setHeaderCount(id, n){
 /* ordered list of calc items for the report (tables first in card order, then images) */
 function calcItems(){
   const items=[];
-  state.tables.forEach(t=>{ if(t.allRows){ normTable(t); items.push({type:"table", thead:tableHead(t), rows:tableBody(t), headerCount:t.headerCount, cols:t.cols, total:t.total}); } });
+  state.tables.forEach(t=>{ if(t.allRows){ normTable(t); items.push({type:"table", thead:tableHead(t), rows:tableBody(t), headerCount:t.headerCount, cols:t.cols, total:t.total, title:t.title||"", titleColor:t.titleColor||"#0B2540", titleBold:!!t.titleBold, spaceAfter:t.spaceAfter||0}); } });
   state.images.forEach(im=>items.push({type:"image", src:im.src, natW:im.natW, natH:im.natH}));
   return items;
 }
@@ -882,11 +933,46 @@ function removeDocRow(i){ state.docs.splice(i,1); renderDocRows(); render(); sav
 /* ============ logo / images ============ */
 function useDefaultLogo(){ state.logo=defaultLogo(); state.logoCustom=false; afterChange(); }
 function removeLogo(){ state.logo=""; state.logoCustom=false; afterChange(); }
-function clearImg(which){ if(which==="task") state.taskImg=""; if(which==="layout") state.layout=""; afterChange(); }
+function clearImg(which){ if(which==="task") state.taskImg=""; if(which==="layout"){ state.layout=""; state.layouts=[]; renderLayouts(); } afterChange(); }
+
+/* ============ site plans (Lagepläne) — multiple ============ */
+function addLayouts(input){
+  const files=[...(input.files||[])]; if(!files.length) return;
+  let pending=files.length;
+  const done=()=>{ if(--pending===0){ input.value=""; renderLayouts(); render(); saveLocal(); } };
+  files.forEach(f=>{
+    const r=new FileReader();
+    r.onload=async ev=>{ const src=ev.target.result; const {w,h}=await imgSize(src);
+      state.layouts.push({id:blockSeq++, src, natW:w, natH:h}); done(); };
+    r.onerror=done;
+    r.readAsDataURL(f);
+  });
+}
+function removeLayout(id){ state.layouts=state.layouts.filter(l=>l.id!==id); renderLayouts(); render(); saveLocal(); }
+function moveLayout(id,dir){
+  const i=state.layouts.findIndex(l=>l.id===id); if(i<0) return;
+  const j=i+dir; if(j<0||j>=state.layouts.length) return;
+  [state.layouts[i],state.layouts[j]]=[state.layouts[j],state.layouts[i]];
+  renderLayouts(); render(); saveLocal();
+}
+function renderLayouts(){
+  const wrap=$("layoutList"); if(!wrap) return; wrap.innerHTML="";
+  state.layouts.forEach((lp,i)=>{
+    const row=document.createElement("div"); row.className="blk";
+    row.innerHTML=`<div class="ic">▤</div><div class="meta"><b>${tt("layout_n",{n:i+1})}</b><small>${lp.natW}×${lp.natH}px</small></div>
+      <div class="ctrls">
+        <button class="icon-btn" title="nach oben" ${i===0?"disabled":""} onclick="moveLayout(${lp.id},-1)">▲</button>
+        <button class="icon-btn" title="nach unten" ${i===state.layouts.length-1?"disabled":""} onclick="moveLayout(${lp.id},1)">▼</button>
+        <button class="icon-btn x" title="Entfernen" onclick="removeLayout(${lp.id})">✕</button>
+      </div>`;
+    wrap.appendChild(row);
+  });
+}
 
 $("logoUpload").addEventListener("change",e=>loadFile(e.target,src=>{state.logo=src;state.logoCustom=true;afterChange();}));
 $("taskImg").addEventListener("change",e=>loadFile(e.target,src=>{state.taskImg=src;afterChange();}));
-$("layoutImg").addEventListener("change",e=>loadFile(e.target,src=>{state.layout=src;afterChange();}));
+$("layoutImg").addEventListener("change",e=>addLayouts(e.target));
+$("layoutMode").addEventListener("change",()=>{ state.layoutMode=$("layoutMode").value; afterChange(); });
 $("calcImg").addEventListener("change",e=>loadFile(e.target,src=>{addImage(src);e.target.value="";}));
 
 /* report-number toggle */
@@ -965,13 +1051,28 @@ function render(){
     pages.appendChild(frame);
   }
 
-  /* ---- Lageplan (only if image) ---- */
-  if(state.layout){
-    const {frame,pad}=makePage("Seite — Lageplan");
-    pad.innerHTML = pageChrome("Lageplan",{sub:"Standortübersicht"})
-      + `<div class="fill"><div class="center-media"><img src="${state.layout}" alt="Lageplan"></div></div>`
-      + pageFooter();
-    pages.appendChild(frame);
+  /* ---- Lagepläne (only if any image) ---- */
+  if(state.layouts.length){
+    if(state.layoutMode==="combined"){
+      const {frame,pad}=makePage("Seite — Lagepläne");
+      const n=state.layouts.length;
+      const cls = n===1?"one":(n===2?"two":"many");
+      const grid = state.layouts.map(lp=>`<div class="lp-cell"><img src="${lp.src}" alt="Lageplan"></div>`).join("");
+      pad.innerHTML = pageChrome(n>1?"Lagepläne":"Lageplan",{sub:"Standortübersicht"})
+        + `<div class="fill"><div class="lp-grid ${cls}">${grid}</div></div>`
+        + pageFooter();
+      pages.appendChild(frame);
+    } else {
+      const n=state.layouts.length;
+      state.layouts.forEach((lp,idx)=>{
+        const {frame,pad}=makePage("Seite — Lageplan");
+        const sub = n>1 ? `Standortübersicht · ${idx+1} / ${n}` : "Standortübersicht";
+        pad.innerHTML = pageChrome("Lageplan",{sub})
+          + `<div class="fill"><div class="center-media"><img src="${lp.src}" alt="Lageplan"></div></div>`
+          + pageFooter();
+        pages.appendChild(frame);
+      });
+    }
   }
 
   /* ---- Berechnung (paginated) ---- */
@@ -1033,6 +1134,7 @@ function paginateCalc(pages){
   const calcMargin = full ? 14 : MARGIN_PT; // narrow margins in full mode -> more width for the table
   const ROW_GAP   = 8;                       // gap between continuation chunks of the same table
   const BLOCK_GAP = full ? 30 : 34;          // breathing room between separate tables / images
+  const SPACE_UNIT= 20;                      // px added per manual "space" unit chosen after a table
   calcEffPt = null;                          // smallest effective table font this run (for the info chip)
 
   let pad=null, body=null, availH=0, bodyW=0, used=0, isFirst=true;
@@ -1115,19 +1217,35 @@ function paginateCalc(pages){
       used += fragH + ROW_GAP;
     }
 
+    // --- optional table name/heading (printed once, above the first fragment) ---
+    let titleH=0;
+    if(b.title && b.title.trim()){
+      const m2=document.createElement("div"); m2.className="calc-title";
+      m2.style.cssText="visibility:hidden;position:absolute;width:"+bodyW+"px;";
+      m2.style.fontWeight=b.titleBold?"700":"400"; m2.textContent=b.title;
+      body.appendChild(m2); titleH=m2.getBoundingClientRect().height+5; body.removeChild(m2);
+    }
+    function emitTitle(){
+      if(!(b.title && b.title.trim())) return;
+      const d=document.createElement("div"); d.className="calc-title";
+      d.style.color=b.titleColor; d.style.fontWeight=b.titleBold?"700":"400"; d.textContent=b.title;
+      body.appendChild(d); used += titleH;
+    }
+
     spaceBeforeBlock();
     const R = availH - used;                         // free space remaining on the current page
 
-    if(keep && H <= R + 0.5){
-      renderFragment(0, n);                          // case 1: fits in the space that's left
-    } else if(keep && H <= availH + 0.5){
-      openPage(); renderFragment(0, n);              // case 2: fits a page, just not this one -> move whole table
+    if(keep && titleH + H <= R + 0.5){
+      emitTitle(); renderFragment(0, n);             // case 1: title + table fit the space that's left
+    } else if(keep && titleH + H <= availH + 0.5){
+      openPage(); emitTitle(); renderFragment(0, n); // case 2: fits a page, just not this one -> move whole table
     } else {
       // case 3: genuinely taller than a page -> split, repeating the header, with a row minimum
       if(keep && used>0){
-        const need = headHs + rowHs.slice(0, Math.min(MIN_ROWS, n)).reduce((a,x)=>a+x,0);
+        const need = titleH + headHs + rowHs.slice(0, Math.min(MIN_ROWS, n)).reduce((a,x)=>a+x,0);
         if((availH-used) < Math.min(need, availH)) openPage();   // don't start a long table on a thin sliver
       }
+      emitTitle();
       let i=0, firstFrag=true;
       while(i<n){
         const cap = (firstFrag ? (availH-used) : availH);
@@ -1140,6 +1258,13 @@ function paginateCalc(pages){
         i=j; firstFrag=false;
         if(i<n) openPage();
       }
+    }
+
+    // --- manual space after this table (user-chosen units; 1 unit ≈ one blank line) ---
+    if(b.spaceAfter>0){
+      const gap=b.spaceAfter*SPACE_UNIT;
+      const sp=document.createElement("div"); sp.style.cssText=`width:100%;height:${gap}px;`;
+      body.appendChild(sp); used+=gap;
     }
   });
 }
@@ -1241,6 +1366,7 @@ function saveLocal(){
         useReportNo:$("useReportNo").checked, calcFull:$("calcFull").checked, keepTogether:$("keepTogether").checked,
         docBase:$("docBase").value, docs:state.docs,
         logo:state.logo, logoCustom:state.logoCustom, taskImg:state.taskImg, layout:state.layout,
+        layouts:state.layouts, layoutMode:state.layoutMode,
         tables:state.tables, images:state.images, blockSeq
       };
       ["company","project","subtitle","worked","checked","rdate","status","reportNo","taskText","notes"]
@@ -1267,10 +1393,15 @@ function loadLocal(){
     state.logoCustom = !!d.logoCustom;
     state.logo = state.logoCustom ? (d.logo||defaultLogo()) : defaultLogo();
     state.taskImg=d.taskImg||""; state.layout=d.layout||"";
+    state.layouts=Array.isArray(d.layouts)?d.layouts:[];
+    state.layoutMode=d.layoutMode||"each";
     state.tables=Array.isArray(d.tables)?d.tables:[];
     state.images=Array.isArray(d.images)?d.images:[];
-    const ids=[...state.tables,...state.images].map(x=>x.id||0);
+    const ids=[...state.tables,...state.images,...state.layouts].map(x=>x.id||0);
     blockSeq=d.blockSeq||((ids.length?Math.max(...ids):0)+1);
+    // migrate a legacy single site plan into the new list
+    if(d.layout && !state.layouts.length){ state.layouts.push({id:blockSeq++, src:d.layout, natW:1, natH:1}); }
+    if($("layoutMode")) $("layoutMode").value=state.layoutMode;
     return true;
   }catch(e){ console.warn(e); return false; }
 }
