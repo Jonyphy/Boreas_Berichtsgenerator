@@ -412,6 +412,11 @@
             <span data-i18n="t_keep">Tabellen zusammenhalten<small>Passt eine Tabelle nicht mehr auf die Seite, kommt sie komplett auf die nächste — nur wenn sie höher als eine ganze Seite ist, wird sie geteilt (mit wiederholtem Kopf).</small></span>
           </label>
 
+          <label class="toggle" for="numFmtDE" style="margin-top:10px;">
+            <input type="checkbox" id="numFmtDE">
+            <span data-i18n="t_numfmt">Zahlenformat EN → DE<small>Komma (,) wird zu Punkt (.) und Punkt (.) zu Komma (,) — z. B. 18,039.50 → 18.039,50</small></span>
+          </label>
+
           <label for="calcImg" style="margin-top:16px;" data-i18n="l_calc_img">Berechnung als Bild (optional)</label>
           <input id="calcImg" type="file" accept="image/*">
           <div id="imgList" class="blocks"></div>
@@ -514,6 +519,7 @@ const EN = {
   h_fontsize:'Target size for tables. <b>All columns always stay visible</b> — if a table is wider than the page it is fitted to the page width (the font then shrinks automatically). Very wide tables (many columns) reach about 6–7 pt this way; larger is only possible with fewer columns.',
   t_calcfull:"Calculation full-page<small>Margins &amp; header shrink — the table gets maximum space.</small>",
   t_keep:"Keep tables together<small>If a table no longer fits the page, it moves entirely to the next one — only if it is taller than a whole page is it split (with the header repeated).</small>",
+  t_numfmt:"Number format EN → DE<small>Comma (,) becomes dot (.) and dot (.) becomes comma (,) — e.g. 18,039.50 → 18.039,50</small>",
   l_calc_img:"Calculation as image (optional)", b_clear_calc:"Remove all tables &amp; images",
   h_docs_intro:"List of source documents with a clickable link. In the PDF a click opens the given target (folder/file).",
   l_docbase:"Base folder (optional)",
@@ -1128,9 +1134,32 @@ function expandGrid(tableEl){
   return {grid, nCols, nRows:grid.length};
 }
 
+/* ---- swap EN→DE number formatting in table cells: , ↔ . ---- */
+function swapNumFmt(tableEl){
+  // A cell is treated as numeric if (after trimming) it matches:
+  //   optional sign, then digits mixed with commas/dots/spaces, optional trailing %/€/$
+  const NUM_RE = /^[−\-+]?\s*[\d,.\s]+[%€$]?$/;
+  tableEl.querySelectorAll("td, th").forEach(cell=>{
+    const txt = cell.textContent.trim();
+    if(!txt || !NUM_RE.test(txt)) return;          // skip non-numeric cells
+    // swap: comma→placeholder→dot→comma→placeholder→dot
+    const swapped = txt.replace(/[.,]/g, m => m === ',' ? '.' : ',');
+    // only replace the text node, preserve child elements (rare but safe)
+    const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+    let node;
+    while(node = walker.nextNode()){
+      const nt = node.textContent.trim();
+      if(nt && NUM_RE.test(nt)){
+        node.textContent = node.textContent.replace(/[.,]/g, m => m === ',' ? '.' : ',');
+      }
+    }
+  });
+}
+
 function paginateCalc(pages){
   const fontPt=getFontPt();                 // target size; auto-shrinks only if a table is too wide
   const full = $("calcFull").checked;
+  const numSwap = $("numFmtDE") ? $("numFmtDE").checked : false;   // EN→DE number swap
   const calcMargin = full ? 14 : MARGIN_PT; // narrow margins in full mode -> more width for the table
   const ROW_GAP   = 8;                       // gap between continuation chunks of the same table
   const BLOCK_GAP = full ? 30 : 34;          // breathing room between separate tables / images
@@ -1209,6 +1238,7 @@ function paginateCalc(pages){
       const t=document.createElement("table");
       t.className="calc-table"; t.style.fontSize=fontPt+"pt"; t.style.tableLayout="fixed"; t.style.width=natW+"px";
       t.innerHTML=colgroup + b.thead + b.rows.slice(start,end).join("");
+      if(numSwap) swapNumFmt(t);
       if(wScale<1){ t.style.transform=`scale(${wScale})`; t.style.transformOrigin="top left"; }
       const fragH = headHs + rowHs.slice(start,end).reduce((a,x)=>a+x,0);
       const wrap=document.createElement("div");
@@ -1364,6 +1394,7 @@ function saveLocal(){
       const d={
         fields:{}, format:$("format").value, fontPt:$("fontPt").value,
         useReportNo:$("useReportNo").checked, calcFull:$("calcFull").checked, keepTogether:$("keepTogether").checked,
+        numFmtDE:$("numFmtDE").checked,
         docBase:$("docBase").value, docs:state.docs,
         logo:state.logo, logoCustom:state.logoCustom, taskImg:state.taskImg, layout:state.layout,
         layouts:state.layouts, layoutMode:state.layoutMode,
@@ -1388,6 +1419,7 @@ function loadLocal(){
     $("reportNoWrap").style.display=d.useReportNo?"block":"none";
     if(d.calcFull!==undefined) $("calcFull").checked=!!d.calcFull;
     if(d.keepTogether!==undefined) $("keepTogether").checked=!!d.keepTogether;
+    if(d.numFmtDE!==undefined) $("numFmtDE").checked=!!d.numFmtDE;
     if(d.docBase!==undefined) $("docBase").value=d.docBase;
     if(Array.isArray(d.docs)) state.docs=d.docs;
     state.logoCustom = !!d.logoCustom;
