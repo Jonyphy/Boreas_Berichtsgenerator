@@ -242,7 +242,7 @@
   /* calc body region (the part we paginate into) */
   .calc-body{flex:1;min-height:0;margin-top:18px;}
   .calc-table{border-collapse:collapse;width:auto;}
-  .calc-table td,.calc-table th{border:1px solid #9aa7b2;padding:1px 4px;vertical-align:middle;white-space:nowrap;line-height:1.2;}
+  .calc-table td,.calc-table th{border:1px solid #9aa7b2;padding:var(--cpad,1px) 4px;vertical-align:middle;white-space:nowrap;line-height:1.2;}
   .calc-table th{background:#e4e9ee;font-weight:700;}
 
   /* summary rows (Mittelwert / Summe / …): values stay in their own columns,
@@ -255,10 +255,10 @@
   .calc-table tr.sum-pro > td,.calc-table tr.sum-pro > th{
     background:transparent;color:#0B2540;letter-spacing:.01em;
     border-left:none;border-right:none;border-bottom:none;
-    padding-top:5px;padding-bottom:3px;
+    padding-top:calc(var(--cpad,1px) + 4px);padding-bottom:calc(var(--cpad,1px) + 2px);
   }
   .calc-table tr.sum-pro.sum-top > td,.calc-table tr.sum-pro.sum-top > th{border-top:1.8px solid #0B2540;}
-  .calc-table tr.sum-pro.sum-last > td,.calc-table tr.sum-pro.sum-last > th{border-bottom:3px double #0B2540;padding-bottom:5px;}
+  .calc-table tr.sum-pro.sum-last > td,.calc-table tr.sum-pro.sum-last > th{border-bottom:3px double #0B2540;padding-bottom:calc(var(--cpad,1px) + 4px);}
   .calc-table tr.sum-pro.sum-last > .sum-gap{border-bottom:none;}
 
   .calc-img-block{margin-bottom:14px;text-align:center;}
@@ -611,6 +611,11 @@ const DYN = {
   sum_nofound:{de:"Keine Summenzeilen erkannt", en:"No summary rows detected"},
   sum_words_fixed:{de:"Standard:", en:"Built-in:"},
   adv_toggle:{de:"⚙ Erweiterte Optionen", en:"⚙ Advanced options"},
+  row_height:{de:"Zeilenhöhe:", en:"Row height:"},
+  rh_tight:{de:"Eng", en:"Tight"},
+  rh_normal:{de:"Normal", en:"Normal"},
+  rh_wide:{de:"Weit", en:"Wide"},
+  rh_xwide:{de:"Sehr weit", en:"Extra wide"},
   brk_before:{de:"Tabelle auf neuer Seite beginnen", en:"Start table on a new page"},
   brk_after:{de:"Danach Seitenumbruch (nächste Tabelle auf neuer Seite)", en:"Page break after (next table on a new page)"},
   sum_style:{de:"Darstellung:", en:"Style:"},
@@ -966,6 +971,7 @@ function renderCards(){
     const hc=filled?(t.headerCount||1):1;
     const mode=t.sumMode||"none";
     const sumStyle=t.sumStyle||"pro";
+    const rowPad=(t.rowPad==null?1:t.rowPad);
     const adv=!!t.advOpen;
     let sumInfo="";
     if(filled && adv){
@@ -1005,6 +1011,13 @@ function renderCards(){
             <span style="font-weight:700;">pt</span>
             <button class="icon-btn" title="${tt('tbl_font_def')}" data-act="fontdef" data-id="${t.id}">↺</button>
           </div>
+          <label class="hcrow" style="margin-bottom:8px;">${tt("row_height")}
+            <select class="tt-rowpad" data-id="${t.id}" style="flex:1;padding:6px 8px;font-size:13px;">
+              <option value="0" ${rowPad===0?"selected":""}>${tt("rh_tight")}</option>
+              <option value="1" ${rowPad===1?"selected":""}>${tt("rh_normal")}</option>
+              <option value="3" ${rowPad===3?"selected":""}>${tt("rh_wide")}</option>
+              <option value="6" ${rowPad===6?"selected":""}>${tt("rh_xwide")}</option>
+            </select></label>
           <label class="hcrow" style="margin-bottom:8px;">${tt("sum_mode")}
             <select class="tt-summode" data-id="${t.id}" style="flex:1;padding:6px 8px;font-size:13px;">
               <option value="auto" ${mode==="auto"?"selected":""}>${tt("sum_auto")}</option>
@@ -1066,6 +1079,9 @@ function renderCards(){
   wrap.querySelectorAll(".tt-sumrep").forEach(inp=>{
     inp.addEventListener("change", ()=>{ const t=findTable(inp); if(t){ t.sumRepeat=inp.checked; render(); saveLocal(); } });
   });
+  wrap.querySelectorAll(".tt-rowpad").forEach(sel=>{
+    sel.addEventListener("change", ()=>{ const t=findTable(sel); if(t){ t.rowPad=parseInt(sel.value)||0; render(); saveLocal(); } });
+  });
   wrap.querySelectorAll(".tt-brkbefore").forEach(inp=>{
     inp.addEventListener("change", ()=>{ const t=findTable(inp); if(t){ t.breakBefore=inp.checked; render(); saveLocal(); } });
   });
@@ -1102,7 +1118,7 @@ function setCardStatus(id,msg,cls){
 }
 /* the settings of a card belong to the CARD, not to the pasted content —
    a re-paste keeps name, colour, bold, spacing, font size and summary options */
-const CARD_SETTINGS=["title","titleColor","titleBold","spaceAfter","fontPt","sumMode","sumN","sumRepeat","sumStyle","breakBefore","breakAfter","headerCountManual","advOpen"];
+const CARD_SETTINGS=["title","titleColor","titleBold","spaceAfter","fontPt","sumMode","sumN","sumRepeat","sumStyle","rowPad","breakBefore","breakAfter","headerCountManual","advOpen"];
 function carryOverSettings(oldT, newT){
   CARD_SETTINGS.forEach(k=>{ if(oldT[k]!==undefined) newT[k]=oldT[k]; });
   if(oldT.headerCountManual && oldT.headerCount){
@@ -1176,7 +1192,7 @@ function calcItems(){
       headerCount:t.headerCount, cols:t.cols, total:t.total,
       title:t.title||"", titleColor:t.titleColor||"#0B2540", titleBold:!!t.titleBold,
       spaceAfter:t.spaceAfter||0, fontPt:tableFontPt(t), sumRepeat:!!t.sumRepeat, sumStyle:t.sumStyle||"pro",
-      breakBefore:!!t.breakBefore, breakAfter:!!t.breakAfter
+      rowPad:(t.rowPad==null?1:t.rowPad), breakBefore:!!t.breakBefore, breakAfter:!!t.breakAfter
     });
   });
   state.images.forEach(im=>items.push({type:"image", src:im.src, natW:im.natW, natH:im.natH}));
@@ -1524,8 +1540,10 @@ function paginateCalc(pages){
 
     // Measure the UNTOUCHED table. Summary styling merges empty cells, and measuring
     // that version would hand us a column grid with missing columns.
+    const rowPad=(b.rowPad==null?1:b.rowPad);          // per-table row height (cell padding, px)
     const meas=document.createElement("table");
     meas.className="calc-table"; meas.style.fontSize=fontPt+"pt";
+    meas.style.setProperty("--cpad", rowPad+"px");
     meas.style.visibility="hidden"; meas.style.position="absolute";
     meas.innerHTML=b.thead + b.rows.join("");
     body.appendChild(meas);
@@ -1557,6 +1575,7 @@ function paginateCalc(pages){
     if(hasSum){
       const meas2=document.createElement("table");
       meas2.className="calc-table"; meas2.style.fontSize=fontPt+"pt";
+      meas2.style.setProperty("--cpad", rowPad+"px");
       meas2.style.visibility="hidden"; meas2.style.position="absolute";
       meas2.innerHTML=b.thead + b.rows.join("");
       applySumStyle(meas2, hc, sumStart, sumStyle);
@@ -1590,6 +1609,7 @@ function paginateCalc(pages){
     function renderFragment(start, end, appendSum){
       const t=document.createElement("table");
       t.className="calc-table"; t.style.fontSize=fontPt+"pt"; t.style.tableLayout="fixed"; t.style.width=natW+"px";
+      t.style.setProperty("--cpad", rowPad+"px");
       const slice=b.rows.slice(start,end);
       const rowsHtml = appendSum ? slice.concat(sumRowsHtml) : slice;
       t.innerHTML=colgroup + b.thead + rowsHtml.join("");
