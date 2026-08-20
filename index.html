@@ -854,7 +854,11 @@ function blockFromTable(el){
     headerCount: detectHeaderRows(el),    // how many top rows are the (repeating) header
     cols,
     total: trs.length,
-    html: el.outerHTML
+    html: el.outerHTML,
+    // starting settings for a NEW table — changeable per card afterwards
+    rowPad: 3,           // Zeilenhöhe: Weit
+    sumMode: "auto",     // Summenzeilen: automatisch erkennen
+    sumStyle: "excel"    // Darstellung: wie Excel (Farben behalten)
   };
 }
 // ensure older saved blocks (with thead/rows) get the new shape
